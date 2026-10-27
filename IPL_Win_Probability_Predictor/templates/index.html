@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10182d">
+  <title>IPL Win Probability Predictor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="IPL Predictor home"><span class="brand-mark">IPL</span><span>WIN PROBABILITY</span></a>
+      <span class="season-pill"><span class="live-dot"></span> SECOND INNINGS · CHASE MODE</span>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">CRICKET ANALYTICS / MACHINE LEARNING</p>
+        <h1>Every run changes<br><span>the equation.</span></h1>
+        <p class="hero-text">Estimate the chasing team's chance of winning from the current match situation, powered by a model trained on historical IPL deliveries.</p>
+      </div>
+      <div class="hero-stat"><span class="stat-ball">●</span><strong>20</strong><span>overs per innings</span><small>6 legal balls per over</small></div>
+    </section>
+
+    <section class="workspace">
+      <form id="predict-form" class="panel form-panel" novalidate>
+        <div class="panel-heading">
+          <div><p class="eyebrow">MATCH SETUP</p><h2>Current match situation</h2></div>
+          <span class="step-tag">01 / INPUTS</span>
+        </div>
+
+        <div class="team-grid">
+          <div class="field autocomplete-field">
+            <label for="batting_team">Batting team <span class="required">*</span></label>
+            <input id="batting_team" name="batting_team" type="text" placeholder="Search batting team..." autocomplete="off" required>
+            <div class="suggestions" id="batting_team-suggestions" role="listbox" aria-label="Batting team suggestions" hidden></div>
+          </div>
+          <div class="versus">VS</div>
+          <div class="field autocomplete-field">
+            <label for="bowling_team">Bowling team <span class="required">*</span></label>
+            <input id="bowling_team" name="bowling_team" type="text" placeholder="Search bowling team..." autocomplete="off" required>
+            <div class="suggestions" id="bowling_team-suggestions" role="listbox" aria-label="Bowling team suggestions" hidden></div>
+          </div>
+        </div>
+
+        <div class="field autocomplete-field venue-field">
+          <label for="venue">Venue <span class="required">*</span></label>
+          <input id="venue" name="venue" type="text" placeholder="Type a stadium or venue..." autocomplete="off" required>
+          <div class="suggestions" id="venue-suggestions" role="listbox" aria-label="Venue suggestions" hidden></div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="score">Current score <span class="required">*</span></label>
+            <div class="input-wrap"><input id="score" name="score" type="number" min="0" step="1" placeholder="e.g. 126" required><span class="input-unit">RUNS</span></div>
+          </div>
+          <div class="field">
+            <label for="wickets_lost">Wickets lost <span class="required">*</span></label>
+            <div class="input-wrap"><input id="wickets_lost" name="wickets_lost" type="number" min="0" max="10" step="1" placeholder="e.g. 4" required><span class="input-unit">/ 10</span></div>
+          </div>
+          <div class="field">
+            <label for="overs_completed">Overs completed <span class="required">*</span></label>
+            <div class="input-wrap"><input id="overs_completed" name="overs_completed" type="number" min="0" max="20" step="0.1" placeholder="e.g. 14.3" required><span class="input-unit">OVERS</span></div>
+            <small class="field-hint">Cricket notation: 14.3 = 14 overs and 3 balls.</small>
+          </div>
+          <div class="field">
+            <label for="target">Target score <span class="required">*</span></label>
+            <div class="input-wrap"><input id="target" name="target" type="number" min="1" step="1" placeholder="e.g. 181" required><span class="input-unit">RUNS</span></div>
+          </div>
+        </div>
+
+        <div id="form-error" class="error-box" role="alert" hidden></div>
+        <div class="form-actions">
+          <button type="submit" id="predict-button" class="primary-button"><span class="button-label">Predict win probability</span><span class="button-arrow">↗</span></button>
+          <button type="button" id="reset-button" class="reset-button">↺ Reset</button>
+        </div>
+        <p class="privacy-note"><span>ⓘ</span> Prediction is based on historical data and is an estimate, not a guarantee.</p>
+      </form>
+
+      <aside class="panel result-panel" aria-live="polite">
+        <div class="panel-heading result-heading">
+          <div><p class="eyebrow">MODEL OUTPUT</p><h2>Chase outlook</h2></div>
+          <span class="result-icon">↗</span>
+        </div>
+        <div id="empty-result" class="empty-result">
+          <div class="orbit"><div class="orbit-core">%</div><span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span><span class="orbit-dot dot-three"></span></div>
+          <h3>Ready when you are</h3>
+          <p>Enter the live match situation to calculate the batting team's estimated chance of winning.</p>
+          <div class="mini-metrics"><div><span>RUNS LEFT</span><strong>—</strong></div><div><span>BALLS LEFT</span><strong>—</strong></div><div><span>REQ. RATE</span><strong>—</strong></div></div>
+        </div>
+        <div id="loading-result" class="loading-result" hidden>
+          <div class="spinner"></div><h3>Analysing match state</h3><p>Applying the trained model to the current chase...</p>
+        </div>
+        <div id="prediction-result" hidden>
+          <div class="probability-label" id="result-team">Batting team</div>
+          <div class="probability-number"><strong id="probability">—</strong><span>%</span></div>
+          <div class="probability-caption">ESTIMATED WIN PROBABILITY</div>
+          <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+          <div class="progress-scale"><span>0% CHALLENGING</span><span>100% FAVOURED</span></div>
+          <div class="result-divider"></div>
+          <h3 class="summary-title">Match situation</h3>
+          <p id="summary" class="summary-text"></p>
+          <div class="metric-grid">
+            <div class="metric-card"><span>RUNS REMAINING</span><strong id="runs-remaining">—</strong></div>
+            <div class="metric-card"><span>BALLS REMAINING</span><strong id="balls-remaining">—</strong></div>
+            <div class="metric-card"><span>CURRENT RUN RATE</span><strong id="current-run-rate">—</strong></div>
+            <div class="metric-card"><span>REQUIRED RUN RATE</span><strong id="required-run-rate">—</strong></div>
+          </div>
+          <p class="result-footnote">Only the batting team's probability is displayed.</p>
+        </div>
+      </aside>
+    </section>
+    <footer><span>IPL WIN PROBABILITY PREDICTOR</span><span>BUILT WITH FLASK · SCIKIT-LEARN</span></footer>
+  </main>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
